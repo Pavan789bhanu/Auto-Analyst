@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Processing App</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Data Processing App</h1>
+
+  <!-- Login Section -->
+  <section id="login">
+    <h2>Login</h2>
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+    <p id="loginMessage"></p>
+  </section>
+
+  <!-- File Upload Section -->
+  <section id="upload" style="display: none;">
+    <h2>Upload Dataset</h2>
+    <input type="file" id="fileInput">
+    <button onclick="uploadFile()">Upload</button>
+    <p id="uploadMessage"></p>
+  </section>
+
+  <!-- Query Submission Section -->
+  <section id="query" style="display: none;">
+    <h2>Submit Query</h2>
+    <textarea id="queryInput" rows="4" placeholder="Enter your query here"></textarea>
+    <button onclick="submitQuery()">Submit Query</button>
+    <p id="queryMessage"></p>
+  </section>
+
+  <!-- Results Section -->
+  <section id="results" style="display: none;">
+    <h2>Processed Results</h2>
+    <button onclick="fetchResults()">Fetch Results</button>
+    <ul id="resultsList"></ul>
+  </section>
+
+  <script src="script.js"></script>
+</body>
+</html>
