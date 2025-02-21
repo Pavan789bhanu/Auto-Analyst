@@ -1,4 +1,4 @@
-# Flask Application with OpenAI API Integration
+
 
 This README provides step-by-step instructions to set up and execute the Flask application.
 
