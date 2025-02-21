@@ -1,9 +1,4 @@
 
-
-This README provides step-by-step instructions to set up and execute the Flask application.
-
----
-
 ## **Prerequisites**
 
 ### 1. Tools and Dependencies
