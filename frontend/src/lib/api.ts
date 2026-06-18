@@ -1,0 +1,126 @@
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+export type User = {
+  id: number;
+  username: string;
+  email: string;
+  created_at: string;
+};
+
+export type UserStats = {
+  datasets: number;
+  analyses: number;
+  completed_analyses: number;
+};
+
+export type Dataset = {
+  id: number;
+  user_id: number;
+  filename: string;
+  file_key: string;
+  size_bytes: number;
+  row_count: number;
+  column_count: number;
+  columns: string[];
+  created_at: string;
+};
+
+export type Analysis = {
+  id: number;
+  user_id: number;
+  dataset_id: number;
+  query: string;
+  status: "pending" | "processing" | "completed" | "failed";
+  plan?: string | null;
+  plan_desc?: string | null;
+  output?: string | null;
+  agent_outputs?: Record<string, Record<string, string>>;
+  error_message?: string | null;
+  filename?: string;
+  file_key?: string;
+  row_count?: number;
+  column_count?: number;
+  created_at: string;
+  completed_at?: string | null;
+};
+
+class ApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
+
+async function request<T>(
+  path: string,
+  options: RequestInit = {},
+  token?: string | null,
+): Promise<T> {
+  const headers = new Headers(options.headers);
+  if (!(options.body instanceof FormData)) {
+    headers.set("Content-Type", "application/json");
+  }
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  const response = await fetch(`${API_URL}${path}`, {
+    ...options,
+    headers,
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(data.message || "Request failed", response.status);
+  }
+  return data as T;
+}
+
+export const api = {
+  health: () => request<{ status: string }>("/api/health"),
+
+  register: (payload: { username: string; email: string; password: string }) =>
+    request<{ access_token: string; user: User }>("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  login: (payload: { username: string; password: string }) =>
+    request<{ access_token: string; user: User }>("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  me: (token: string) =>
+    request<{ user: User; stats: UserStats }>("/api/auth/me", {}, token),
+
+  listDatasets: (token: string) =>
+    request<{ datasets: Dataset[] }>("/api/datasets", {}, token),
+
+  uploadDataset: (token: string, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return request<{ dataset: Dataset; message: string }>(
+      "/api/datasets/upload",
+      { method: "POST", body: formData },
+      token,
+    );
+  },
+
+  listAnalyses: (token: string) =>
+    request<{ analyses: Analysis[] }>("/api/analyses", {}, token),
+
+  createAnalysis: (token: string, payload: { query: string; dataset_id: number }) =>
+    request<{ analysis: Analysis; message: string }>(
+      "/api/analyses",
+      { method: "POST", body: JSON.stringify(payload) },
+      token,
+    ),
+
+  getAnalysis: (token: string, id: number) =>
+    request<{ analysis: Analysis }>(`/api/analyses/${id}`, {}, token),
+};
+
+export { ApiError };

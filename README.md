@@ -1,91 +1,124 @@
+# AutoAnalyst
 
-## **Prerequisites**
+AI-powered automated data analysis platform. Upload CSV datasets, ask questions in plain English, and receive AI-generated Python analysis pipelines with preprocessing, statistical analysis, and Plotly visualizations.
 
-### 1. Tools and Dependencies
-- **Python 3.10+**
-- **pip** (Python package manager)
-- **AWS CLI** configured with appropriate permissions
-- An **AWS EC2 Instance** with:
-  - Open ports in the Security Group (e.g., port `5000` for the application).
-  - IAM role attached with access to S3 and Secrets Manager.
+## Architecture
 
-### 2. Environment Variables
-Set up the following environment variables:
-- `OPENAI_API_KEY`: Your OpenAI API key.
-- `AWS_REGION`: AWS region of your S3 bucket and Secrets Manager.
-
----
-
-## **Application Setup**
-
-### 1. Clone the Repository
-SSH into your EC2 instance and clone the application repository:
-```bash
-ssh -i your-key.pem ec2-user@<public-ip>
-git clone <repository-url>
-cd <repository-folder>
+```
+frontend/          Next.js dashboard (auth, upload, analyze, history)
+backend/           Flask REST API (JWT auth, SQLite, local/S3 storage)
+data_analyst_system.py   DSPy multi-agent analysis engine
 ```
 
-### 2. Set Up the Virtual Environment
-Create and activate a virtual environment:
-```bash
-python3 -m venv data-viz-env
-source data-viz-env/bin/activate
-```
+### AI Agent Pipeline
 
-### 3. Install Dependencies
-Install all required Python libraries:
+1. **Planner Agent** — Creates an execution plan from your query
+2. **Preprocessing Agent** — EDA, cleaning, transformations (pandas/numpy)
+3. **Statistical Analytics Agent** — Regression, hypothesis tests (statsmodels)
+4. **Data Viz Agent** — Plotly visualizations
+5. **Code Combiner Agent** — Merges all code into one script
+
+## Quick Start
+
+### Prerequisites
+
+- Python 3.10+
+- Node.js 18+
+- OpenAI API key (for running analyses)
+
+### 1. Backend
+
 ```bash
+cd backend
+export SECRET_KEY="your-jwt-secret"
+export OPENAI_API_KEY="your-openai-api-key"
 pip install -r requirements.txt
+python app.py
 ```
 
-### 4. Configure Secrets Manager
-Ensure your JWT secret is stored in AWS Secrets Manager:
-1. Go to the **AWS Management Console** → **Secrets Manager**.
-2. Create a new secret with the key-value pair:
-   - Key: `SECRET_KEY`
-   - Value: `your-jwt-secret-key`
-3. Note the Secret ARN or ID for the application configuration.
+API runs at `http://localhost:5000`
 
----
+### 2. Frontend
 
-## **Running the Application**
-
-### 1. Start the Flask App (Development Mode)
-For local testing, run the Flask application directly:
 ```bash
-python3 app.py --host=0.0.0.0 --port=5000
-```
-Access the application via:
-```
-http://<public-ip>:5000
+cd frontend
+cp .env.local.example .env.local   # or create .env.local
+npm install
+npm run dev
 ```
 
-### 2. Run with Gunicorn (Production Mode)
-Use Gunicorn for a production-grade WSGI server:
+Dashboard runs at `http://localhost:3000`
+
+## Environment Variables
+
+### Backend (`backend/.env`)
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `SECRET_KEY` | Yes | JWT signing secret |
+| `OPENAI_API_KEY` | Yes* | OpenAI API key for analysis |
+| `USE_S3` | No | Set `true` to use AWS S3 storage |
+| `S3_BUCKET` | No | S3 bucket name (default: `auto-data-analyst`) |
+| `CORS_ORIGINS` | No | Comma-separated allowed origins |
+
+\* Required only when running analyses
+
+### Frontend (`frontend/.env.local`)
+
+| Variable | Description |
+|----------|-------------|
+| `NEXT_PUBLIC_API_URL` | Backend API URL (default: `http://localhost:5000`) |
+
+## API Endpoints
+
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/api/health` | GET | No | Health check |
+| `/api/auth/register` | POST | No | Create account |
+| `/api/auth/login` | POST | No | Sign in |
+| `/api/auth/me` | GET | JWT | User profile + stats |
+| `/api/datasets` | GET | JWT | List datasets |
+| `/api/datasets/upload` | POST | JWT | Upload CSV |
+| `/api/analyses` | GET | JWT | List analyses |
+| `/api/analyses` | POST | JWT | Run analysis |
+| `/api/analyses/:id` | GET | JWT | Get analysis details |
+
+Legacy routes (`/login`, `/upload`, `/query`, `/results`) remain for backward compatibility.
+
+## Production Deployment
+
+### Backend (Gunicorn)
+
 ```bash
+cd backend
 gunicorn -w 4 -b 0.0.0.0:5000 app:app
 ```
 
----
+### Frontend
 
-## **Environment Configuration**
-
-### Set Environment Variables
-Set required environment variables in your shell:
 ```bash
-export OPENAI_API_KEY="your-openai-api-key"
-export AWS_REGION="your-aws-region"
+cd frontend
+npm run build
+npm start
 ```
 
-### Test OpenAI API Key
-Ensure the OpenAI API is configured correctly:
+### AWS S3 (optional)
+
 ```bash
-python3 -c "import openai; openai.api_key = 'your-openai-api-key'; print('API Key Valid')"
+export USE_S3=true
+export S3_BUCKET=auto-data-analyst
+export AWS_REGION=ap-southeast-2
 ```
 
----
+## Design System
 
-## **License**
-This project is licensed under the MIT License.
+The dashboard UI follows the [UI/UX Pro Max](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) design intelligence skill:
 
+- **Style**: Data-dense analytics dashboard
+- **Colors**: Blue primary (#1E40AF) + amber accent (#D97706)
+- **Typography**: Fira Sans + Fira Code
+- **Patterns**: KPI cards, drag-and-drop upload, code viewer with copy
+
+## License
+
+MIT
