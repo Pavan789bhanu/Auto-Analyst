@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import os
 import sys
@@ -5,7 +7,12 @@ from typing import Any
 
 import pandas as pd
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+# Make the project root importable for data_analyst_system. Append (don't
+# insert at index 0) so this never shadows backend modules like `app` with
+# similarly named files in the project root.
+_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if _ROOT not in sys.path:
+    sys.path.append(_ROOT)
 
 from data_analyst_system import (
     DataAnalyst,
@@ -27,29 +34,66 @@ def get_analyst() -> DataAnalyst:
 
 
 def configure_openai() -> None:
+    """Configure DSPy with the OpenAI language model."""
     import dspy
-    import openai
 
     from config import OPENAI_API_KEY
 
     if not OPENAI_API_KEY:
         raise ValueError(
-            "OPENAI_API_KEY is not set. Add it to your environment to run analyses."
+            "OPENAI_API_KEY is not set. Add it to backend/.env to run analyses."
         )
-    openai.api_key = OPENAI_API_KEY
-    lm = dspy.OpenAI(model="gpt-3.5-turbo", api_key=OPENAI_API_KEY)
-    dspy.settings.configure(lm=lm)
+
+    # dspy >= 2.4 API — dspy.LM replaces the deprecated dspy.OpenAI
+    lm = dspy.LM(model="openai/gpt-3.5-turbo", api_key=OPENAI_API_KEY)
+    dspy.configure(lm=lm)
+
+
+def _to_jsonable(value: Any) -> Any:
+    """Best-effort conversion of an agent field value to a JSON-safe type."""
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    return str(value)
 
 
 def serialize_prediction(prediction: Any) -> dict[str, Any]:
+    """Convert a DSPy Prediction object to a plain dict for JSON storage.
+
+    DSPy ``Prediction`` objects keep their output fields in an internal
+    ``_store`` mapping, so naively filtering out underscore-prefixed
+    ``__dict__`` keys returns an empty dict and the per-agent outputs vanish
+    in the UI. We prefer the dict-like ``items()`` interface, then fall back
+    to progressively cruder strategies.
+    """
+    # 1. dict-like access (dspy.Prediction / dspy.Example expose items()).
+    try:
+        items = dict(prediction.items())
+        if items:
+            return {key: _to_jsonable(value) for key, value in items.items()}
+    except Exception:
+        pass
+
+    # 2. Legacy toDict() helper.
     if hasattr(prediction, "toDict"):
-        return prediction.toDict()
+        try:
+            return {k: _to_jsonable(v) for k, v in prediction.toDict().items()}
+        except Exception:
+            pass
+
+    # 3. Internal store, then plain public attributes.
+    store = getattr(prediction, "_store", None)
+    if isinstance(store, dict) and store:
+        return {key: _to_jsonable(value) for key, value in store.items()}
+
     if hasattr(prediction, "__dict__"):
-        return {
-            key: value
+        public = {
+            key: _to_jsonable(value)
             for key, value in prediction.__dict__.items()
             if not key.startswith("_")
         }
+        if public:
+            return public
+
     return {"value": str(prediction)}
 
 
