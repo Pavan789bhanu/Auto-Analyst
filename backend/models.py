@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import sqlite3
 from contextlib import contextmanager
@@ -8,6 +10,17 @@ from typing import Any
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from config import DB_PATH, DATA_DIR
+
+# Use PBKDF2 explicitly. Werkzeug's newer default ("scrypt") depends on
+# hashlib.scrypt, which is unavailable on Python builds whose OpenSSL was
+# compiled without scrypt support (e.g. some macOS Python 3.9 builds) and
+# raises "module 'hashlib' has no attribute 'scrypt'". PBKDF2 is always
+# available and remains a strong, standard choice.
+PASSWORD_HASH_METHOD = "pbkdf2:sha256"
+
+
+def hash_password(password: str) -> str:
+    return generate_password_hash(password, method=PASSWORD_HASH_METHOD)
 
 
 def init_db() -> None:
@@ -20,6 +33,7 @@ def init_db() -> None:
                 username TEXT UNIQUE NOT NULL,
                 email TEXT UNIQUE NOT NULL,
                 password_hash TEXT NOT NULL,
+                is_admin INTEGER NOT NULL DEFAULT 0,
                 created_at TEXT NOT NULL
             );
 
@@ -54,6 +68,14 @@ def init_db() -> None:
             );
             """
         )
+        _migrate(conn)
+
+
+def _migrate(conn) -> None:
+    """Lightweight, idempotent migrations for databases created by older builds."""
+    columns = {row["name"] for row in conn.execute("PRAGMA table_info(users)")}
+    if "is_admin" not in columns:
+        conn.execute("ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0")
 
 
 @contextmanager
@@ -71,16 +93,18 @@ def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def create_user(username: str, email: str, password: str) -> dict[str, Any]:
-    password_hash = generate_password_hash(password)
+def create_user(
+    username: str, email: str, password: str, is_admin: bool = False
+) -> dict[str, Any]:
+    password_hash = hash_password(password)
     created_at = utc_now()
     with get_connection() as conn:
         cursor = conn.execute(
             """
-            INSERT INTO users (username, email, password_hash, created_at)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO users (username, email, password_hash, is_admin, created_at)
+            VALUES (?, ?, ?, ?, ?)
             """,
-            (username, email, password_hash, created_at),
+            (username, email, password_hash, 1 if is_admin else 0, created_at),
         )
         user_id = cursor.lastrowid
     return get_user_by_id(user_id)
@@ -111,6 +135,43 @@ def verify_user(username: str, password: str) -> dict[str, Any] | None:
     if not user or not check_password_hash(user["password_hash"], password):
         return None
     return user
+
+
+def create_or_update_admin(
+    username: str, email: str, password: str
+) -> tuple[dict[str, Any], bool]:
+    """Create the admin account, or update an existing one to match.
+
+    Idempotent: safe to call on every startup. Returns (user, created) where
+    ``created`` is True when a new account was inserted. If an account with the
+    given username already exists, its email, password, and admin flag are
+    refreshed so the credentials in the environment always work.
+    """
+    existing = get_user_by_username(username)
+    password_hash = hash_password(password)
+    with get_connection() as conn:
+        if existing:
+            conn.execute(
+                """
+                UPDATE users
+                SET email = ?, password_hash = ?, is_admin = 1
+                WHERE id = ?
+                """,
+                (email or existing["email"], password_hash, existing["id"]),
+            )
+            user_id = existing["id"]
+            created = False
+        else:
+            cursor = conn.execute(
+                """
+                INSERT INTO users (username, email, password_hash, is_admin, created_at)
+                VALUES (?, ?, ?, 1, ?)
+                """,
+                (username, email, password_hash, utc_now()),
+            )
+            user_id = cursor.lastrowid
+            created = True
+    return get_user_by_id(user_id), created
 
 
 def create_dataset(

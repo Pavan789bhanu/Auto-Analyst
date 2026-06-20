@@ -15,12 +15,19 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 import models
 import storage
-from analyst_service import run_analysis
-from config import CORS_ORIGINS, SECRET_KEY, UPLOAD_DIR
+from config import (
+    ADMIN_EMAIL,
+    ADMIN_PASSWORD,
+    ADMIN_USERNAME,
+    CORS_ORIGINS,
+    JWT_ACCESS_TOKEN_EXPIRES,
+    SECRET_KEY,
+    UPLOAD_DIR,
+)
 
 app = Flask(__name__)
 app.config["JWT_SECRET_KEY"] = SECRET_KEY
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = False
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = JWT_ACCESS_TOKEN_EXPIRES
 CORS(app, origins=CORS_ORIGINS, supports_credentials=True)
 jwt = JWTManager(app)
 
@@ -28,11 +35,50 @@ models.init_db()
 storage.ensure_dirs()
 
 
+def bootstrap_admin() -> None:
+    """Create/refresh the admin account from ADMIN_* environment variables.
+
+    Runs once at startup. This is the production-friendly replacement for the
+    old seed script: set ADMIN_USERNAME / ADMIN_EMAIL / ADMIN_PASSWORD in
+    backend/.env and a working admin login is provisioned automatically on
+    every boot — no manual seeding required.
+    """
+    if not (ADMIN_USERNAME and ADMIN_PASSWORD):
+        return
+    if len(ADMIN_PASSWORD) < 8:
+        print("[admin] ADMIN_PASSWORD must be at least 8 characters — skipping.")
+        return
+    email = ADMIN_EMAIL or f"{ADMIN_USERNAME}@local"
+    _, created = models.create_or_update_admin(ADMIN_USERNAME, email, ADMIN_PASSWORD)
+    print(f"[admin] Admin account '{ADMIN_USERNAME}' {'created' if created else 'updated'}.")
+
+
+bootstrap_admin()
+
+
+@app.cli.command("create-admin")
+def create_admin_command() -> None:
+    """Interactively create or update an admin account: `flask create-admin`."""
+    import getpass
+
+    username = input("Admin username: ").strip()
+    email = input("Admin email: ").strip().lower()
+    password = getpass.getpass("Admin password (min 8 chars): ")
+    if not username or len(password) < 8:
+        print("Username is required and password must be at least 8 characters.")
+        return
+    _, created = models.create_or_update_admin(
+        username, email or f"{username}@local", password
+    )
+    print(f"Admin '{username}' {'created' if created else 'updated'}.")
+
+
 def public_user(user: dict) -> dict:
     return {
         "id": user["id"],
         "username": user["username"],
         "email": user["email"],
+        "is_admin": bool(user.get("is_admin", 0)),
         "created_at": user["created_at"],
     }
 
@@ -158,6 +204,37 @@ def list_analyses():
     return jsonify({"analyses": analyses})
 
 
+def _run_analysis_for(user_id: int, dataset: dict, query: str):
+    """Create, execute, and persist an analysis. Returns (payload, status_code).
+
+    Shared by the modern and legacy routes so there's a single code path.
+    """
+    # Imported lazily so the server can boot and serve auth/datasets even if the
+    # heavy AI dependencies (dspy/openai) aren't installed yet.
+    from analyst_service import run_analysis
+
+    analysis = models.create_analysis(user_id, dataset["id"], query)
+    try:
+        local_path = storage.get_local_path(dataset["file_key"])
+        result = run_analysis(local_path, query)
+        analysis = models.update_analysis(
+            analysis["id"],
+            status="completed",
+            plan=result.get("plan"),
+            plan_desc=result.get("plan_desc"),
+            output=result.get("output"),
+            agent_outputs=result.get("agent_outputs"),
+        )
+        analysis["dataset_preview"] = result.get("dataset_preview")
+    except Exception as exc:
+        analysis = models.update_analysis(
+            analysis["id"], status="failed", error_message=str(exc)
+        )
+        return {"message": "Analysis failed.", "analysis": analysis}, 500
+
+    return {"message": "Analysis completed.", "analysis": analysis}, 200
+
+
 @app.route("/api/analyses", methods=["POST"])
 @jwt_required()
 def create_analysis():
@@ -175,29 +252,8 @@ def create_analysis():
     if not dataset or dataset["user_id"] != user_id:
         return jsonify({"message": "Dataset not found."}), 404
 
-    analysis = models.create_analysis(user_id, dataset["id"], query)
-
-    try:
-        local_path = storage.get_local_path(dataset["file_key"])
-        result = run_analysis(local_path, query)
-        analysis = models.update_analysis(
-            analysis["id"],
-            status="completed",
-            plan=result.get("plan"),
-            plan_desc=result.get("plan_desc"),
-            output=result.get("output"),
-            agent_outputs=result.get("agent_outputs"),
-        )
-        analysis["dataset_preview"] = result.get("dataset_preview")
-    except Exception as exc:
-        analysis = models.update_analysis(
-            analysis["id"],
-            status="failed",
-            error_message=str(exc),
-        )
-        return jsonify({"message": "Analysis failed.", "analysis": analysis}), 500
-
-    return jsonify({"message": "Analysis completed.", "analysis": analysis})
+    payload, status = _run_analysis_for(user_id, dataset, query)
+    return jsonify(payload), status
 
 
 @app.route("/api/analyses/<int:analysis_id>", methods=["GET"])
@@ -243,11 +299,8 @@ def legacy_query():
     if not dataset:
         return jsonify({"message": "Dataset not found."}), 404
 
-    with app.test_request_context(
-        json={"query": query, "dataset_id": dataset["id"]},
-        headers=request.headers,
-    ):
-        return create_analysis()
+    payload, status = _run_analysis_for(user_id, dataset, query)
+    return jsonify(payload), status
 
 
 @app.route("/results", methods=["GET"])
@@ -268,4 +321,4 @@ def legacy_results():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=8000, debug=True)
