@@ -88,10 +88,8 @@ export default function AnalyzePage() {
                       key={dataset.id}
                       type="button"
                       onClick={() => setSelectedDatasetId(dataset.id)}
-                      className={`w-full rounded-xl border px-4 py-3 text-left transition-colors duration-200 ${
-                        selectedDatasetId === dataset.id
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:bg-muted"
+                      className={`w-full rounded-xl px-4 py-3 text-left ${
+                        selectedDatasetId === dataset.id ? "glass-selected" : "glass-tile"
                       }`}
                     >
                       <p className="font-medium">{dataset.filename}</p>
@@ -122,7 +120,7 @@ export default function AnalyzePage() {
                     key={example}
                     type="button"
                     onClick={() => setQuery(example)}
-                    className="rounded-full border border-border bg-card px-3 py-1.5 text-left text-xs text-muted-foreground transition-colors duration-200 hover:border-primary hover:text-foreground"
+                    className="glass-tile rounded-full px-3 py-1.5 text-left text-xs text-muted-foreground hover:text-white"
                   >
                     {example}
                   </button>
@@ -131,7 +129,7 @@ export default function AnalyzePage() {
             </div>
 
             {selectedDataset ? (
-              <div className="rounded-xl border border-border bg-muted/40 p-4">
+              <div className="glass-tile rounded-xl p-4">
                 <p className="mb-2 text-sm font-medium">Dataset preview</p>
                 <div className="flex flex-wrap gap-2">
                   {selectedDataset.columns.map((column) => (
@@ -144,7 +142,7 @@ export default function AnalyzePage() {
             ) : null}
 
             {error ? (
-              <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              <p className="rounded-lg border border-rose-400/30 bg-rose-400/10 px-3 py-2 text-sm text-rose-200">
                 {error}
               </p>
             ) : null}
@@ -192,7 +190,7 @@ export default function AnalyzePage() {
                 <Sparkles className="h-10 w-10 text-primary" />
                 <p className="text-lg font-medium">Your analysis will appear here</p>
                 <p className="max-w-md text-sm text-muted-foreground">
-                  Select a dataset, describe your goal, and AutoAnalyst will generate a
+                  Select a dataset, describe your goal, and Prysm will generate a
                   complete Python analysis pipeline.
                 </p>
               </CardContent>

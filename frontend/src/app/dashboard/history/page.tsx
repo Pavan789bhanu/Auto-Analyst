@@ -59,10 +59,8 @@ export default function HistoryPage() {
                   key={analysis.id}
                   type="button"
                   onClick={() => setSelectedId(analysis.id)}
-                  className={`w-full rounded-xl border px-4 py-3 text-left transition-colors duration-200 ${
-                    selectedId === analysis.id
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:bg-muted"
+                  className={`w-full rounded-xl px-4 py-3 text-left ${
+                    selectedId === analysis.id ? "glass-selected" : "glass-tile"
                   }`}
                 >
                   <div className="mb-1 flex items-center justify-between gap-2">

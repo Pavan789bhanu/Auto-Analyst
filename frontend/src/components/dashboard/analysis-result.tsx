@@ -18,15 +18,15 @@ function CodeBlock({ code, title }: { code: string; title: string }) {
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border">
-      <div className="flex items-center justify-between border-b border-border bg-muted/50 px-4 py-2">
-        <p className="text-sm font-medium">{title}</p>
+    <div className="overflow-hidden rounded-xl border border-white/12">
+      <div className="flex items-center justify-between border-b border-white/10 bg-white/5 px-4 py-2">
+        <p className="font-mono text-sm font-medium text-fuchsia-100">{title}</p>
         <Button variant="ghost" size="sm" onClick={() => void copyCode()}>
           {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
           {copied ? "Copied" : "Copy"}
         </Button>
       </div>
-      <pre className="max-h-[480px] overflow-auto bg-slate-950 p-4 text-sm leading-6 text-slate-100">
+      <pre className="max-h-[480px] overflow-auto bg-black/50 p-4 text-sm leading-6 text-slate-100">
         <code className="font-mono">{code}</code>
       </pre>
     </div>
@@ -65,7 +65,7 @@ export function AnalysisResult({ analysis }: { analysis: Analysis }) {
         </CardHeader>
         {analysis.error_message ? (
           <CardContent>
-            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            <p className="rounded-lg border border-rose-400/30 bg-rose-400/10 px-3 py-2 text-sm text-rose-200">
               {analysis.error_message}
             </p>
           </CardContent>
@@ -82,7 +82,7 @@ export function AnalysisResult({ analysis }: { analysis: Analysis }) {
             <CardDescription>{analysis.plan_desc}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="rounded-xl border border-border bg-muted/40 px-4 py-3 font-mono text-sm">
+            <div className="glass-tile rounded-xl px-4 py-3 font-mono text-sm text-fuchsia-100">
               {analysis.plan}
             </div>
           </CardContent>
@@ -124,7 +124,7 @@ export function AnalysisResult({ analysis }: { analysis: Analysis }) {
                 typeof output.plan_desc === "string" ? output.plan_desc : null;
 
               return (
-                <div key={name} className="rounded-xl border border-border p-4">
+                <div key={name} className="glass-tile rounded-xl p-4">
                   <div className="mb-3 flex items-center justify-between gap-2">
                     <p className="font-medium">{name}</p>
                     <Badge variant="muted">Agent</Badge>

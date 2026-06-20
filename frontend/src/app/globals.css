@@ -1,23 +1,34 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc;
-  --foreground: #1e3a8a;
-  --card: #ffffff;
-  --card-foreground: #1e3a8a;
-  --primary: #1e40af;
+  /* Base canvas */
+  --background: #0a0612;
+  --foreground: #f6f3fc;
+
+  /* Frosted glass surfaces */
+  --card: rgba(255, 255, 255, 0.06);
+  --card-foreground: #f6f3fc;
+
+  /* Sunset palette: violet -> magenta -> rose */
+  --primary: #a855f7;
   --primary-foreground: #ffffff;
-  --secondary: #3b82f6;
+  --secondary: #ec4899;
   --secondary-foreground: #ffffff;
-  --muted: #e9eef6;
-  --muted-foreground: #64748b;
-  --accent: #d97706;
-  --accent-foreground: #ffffff;
-  --destructive: #dc2626;
-  --border: #dbeafe;
-  --ring: #1e40af;
-  --sidebar: #0f172a;
-  --sidebar-foreground: #f8fafc;
+
+  --muted: rgba(255, 255, 255, 0.06);
+  --muted-foreground: #b6abce;
+
+  --accent: #fb7185;
+  --accent-foreground: #2a0a18;
+
+  --destructive: #fb7185;
+
+  --border: rgba(255, 255, 255, 0.12);
+  --ring: #c084fc;
+
+  /* Glass sidebar */
+  --sidebar: rgba(255, 255, 255, 0.04);
+  --sidebar-foreground: #f6f3fc;
 }
 
 @theme inline {
@@ -58,24 +69,156 @@ html {
 }
 
 body {
-  background: var(--background);
   color: var(--foreground);
   font-family: var(--font-fira-sans), system-ui, sans-serif;
+  background-color: var(--background);
+  /* Sunset aurora: layered radial glows over a deep violet canvas */
+  background-image:
+    radial-gradient(60rem 60rem at 12% -10%, rgba(168, 85, 247, 0.38), transparent 60%),
+    radial-gradient(50rem 50rem at 95% 0%, rgba(236, 72, 153, 0.34), transparent 55%),
+    radial-gradient(45rem 45rem at 85% 95%, rgba(251, 113, 133, 0.28), transparent 55%),
+    radial-gradient(55rem 55rem at 10% 100%, rgba(124, 58, 237, 0.30), transparent 60%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  min-height: 100vh;
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--primary) 20%, white);
+  background: color-mix(in srgb, var(--primary) 45%, transparent);
+  color: #fff;
+}
+
+/* Thin, theme-aware scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+/* ---- Glassmorphism utilities ---- */
+.glass {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 8px 32px rgba(10, 6, 18, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
 }
 
 .glass-panel {
-  background: color-mix(in srgb, var(--card) 88%, transparent);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(20px) saturate(170%);
+  -webkit-backdrop-filter: blur(20px) saturate(170%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 10px 40px rgba(10, 6, 18, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
+.glass-strong {
+  background: rgba(255, 255, 255, 0.10);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+/* Interactive glass surface — for selectable rows, chips, buttons */
+.glass-tile {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.glass-tile:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+/* Selected state with a sunset glow ring */
+.glass-selected {
+  background: rgba(236, 72, 153, 0.12);
+  border: 1px solid rgba(236, 72, 153, 0.45);
+  box-shadow:
+    0 0 0 1px rgba(236, 72, 153, 0.25),
+    0 8px 30px rgba(236, 72, 153, 0.25);
+}
+
+/* Hover lift + glow for cards */
+.glass-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.glass-hover:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255, 255, 255, 0.22);
+  box-shadow:
+    0 16px 50px rgba(168, 85, 247, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+/* Gradient hairline at the top of a panel */
+.gradient-edge {
+  position: relative;
+}
+.gradient-edge::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, transparent, #a855f7, #ec4899, #fb7185, transparent);
+  opacity: 0.7;
+}
+
+/* Gradient text for headlines and the wordmark */
+.text-gradient {
+  background: linear-gradient(100deg, #c084fc 0%, #ec4899 50%, #fb7185 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.bg-sunset {
+  background: linear-gradient(110deg, #a855f7 0%, #ec4899 55%, #fb7185 100%);
+}
+
+/* Subtle grid texture used on auth/marketing backdrops */
 .grid-pattern {
   background-image:
-    linear-gradient(to right, color-mix(in srgb, var(--border) 50%, transparent) 1px, transparent 1px),
-    linear-gradient(to bottom, color-mix(in srgb, var(--border) 50%, transparent) 1px, transparent 1px);
+    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
   background-size: 48px 48px;
+}
+
+/* Floating glow orbs for hero/auth backgrounds */
+.orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(80px);
+  opacity: 0.55;
+  pointer-events: none;
+  animation: orb-float 14s ease-in-out infinite;
+}
+@keyframes orb-float {
+  0%, 100% { transform: translateY(0) translateX(0) scale(1); }
+  50% { transform: translateY(-30px) translateX(20px) scale(1.08); }
+}
+
+@keyframes float-soft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.animate-float-soft {
+  animation: float-soft 6s ease-in-out infinite;
 }

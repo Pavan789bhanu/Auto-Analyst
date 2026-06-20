@@ -1,9 +1,10 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export type User = {
   id: number;
   username: string;
   email: string;
+  is_admin?: boolean;
   created_at: string;
 };
 
@@ -66,10 +67,21 @@ async function request<T>(
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const response = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}${path}`, {
+      ...options,
+      headers,
+    });
+  } catch {
+    // fetch rejects (TypeError) when the server is unreachable, DNS fails,
+    // or CORS blocks the request before a response is returned. Surface a
+    // specific, actionable message instead of a generic "Unable to sign in".
+    throw new ApiError(
+      `Can't reach the server at ${API_URL}. Make sure the backend is running and NEXT_PUBLIC_API_URL is correct.`,
+      0,
+    );
+  }
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {

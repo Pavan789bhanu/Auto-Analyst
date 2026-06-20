@@ -16,9 +16,9 @@ const firaCode = Fira_Code({
 });
 
 export const metadata: Metadata = {
-  title: "AutoAnalyst | AI-Powered Data Analysis",
+  title: "Prysm — AI Data Analysis, Refracted Into Insight",
   description:
-    "Upload datasets, ask questions in plain English, and get AI-generated analysis pipelines with preprocessing, statistics, and visualizations.",
+    "Prysm turns raw datasets into insight. Upload a CSV, ask in plain English, and a team of AI agents plans, cleans, analyzes, and visualizes your data — returning a production-ready Python pipeline.",
 };
 
 export default function RootLayout({
