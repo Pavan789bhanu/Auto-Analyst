@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { BarChart3, Loader2 } from "lucide-react";
+import { Gem, Loader2 } from "lucide-react";
 import { ApiError } from "@/lib/api";
 import { useAuth } from "@/components/providers/auth-provider";
 import { Button } from "@/components/ui/button";
@@ -34,14 +34,22 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="grid-pattern flex min-h-screen items-center justify-center px-4 py-12">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-12">
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <div className="orb left-[-6rem] top-[-4rem] h-80 w-80 bg-fuchsia-600/40" />
+        <div className="orb bottom-[-6rem] right-[-4rem] h-80 w-80 bg-rose-500/40" />
+        <div className="grid-pattern absolute inset-0 opacity-60" />
+      </div>
+
       <Card className="w-full max-w-md glass-panel">
         <CardHeader className="text-center">
-          <Link href="/" className="mx-auto mb-4 flex items-center gap-2 font-semibold text-primary">
-            <BarChart3 className="h-6 w-6" />
-            AutoAnalyst
+          <Link href="/" className="mx-auto mb-4 flex items-center gap-2.5 font-semibold">
+            <span className="bg-sunset flex h-9 w-9 items-center justify-center rounded-xl shadow-[0_6px_20px_rgba(236,72,153,0.45)]">
+              <Gem className="h-5 w-5 text-white" />
+            </span>
+            <span className="text-lg text-white">Prysm</span>
           </Link>
-          <CardTitle className="text-2xl">Welcome back</CardTitle>
+          <CardTitle className="text-2xl text-white">Welcome back</CardTitle>
           <CardDescription>Sign in to access your analysis dashboard</CardDescription>
         </CardHeader>
         <CardContent>
@@ -70,7 +78,7 @@ export default function LoginPage() {
               />
             </div>
             {error ? (
-              <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              <p className="rounded-lg border border-rose-400/30 bg-rose-400/10 px-3 py-2 text-sm text-rose-200">
                 {error}
               </p>
             ) : null}
@@ -81,7 +89,7 @@ export default function LoginPage() {
           </form>
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Don&apos;t have an account?{" "}
-            <Link href="/register" className="font-medium text-primary hover:underline">
+            <Link href="/register" className="font-medium text-fuchsia-300 hover:text-fuchsia-200 hover:underline">
               Create one
             </Link>
           </p>

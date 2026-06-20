@@ -1,6 +1,6 @@
-# AutoAnalyst
+# Prysm
 
-AI-powered automated data analysis platform. Upload CSV datasets, ask questions in plain English, and receive AI-generated Python analysis pipelines with preprocessing, statistical analysis, and Plotly visualizations.
+**AI data analysis, refracted into insight.** Prysm is an AI-powered automated data analysis platform. Upload CSV datasets, ask questions in plain English, and receive AI-generated Python analysis pipelines with preprocessing, statistical analysis, and Plotly visualizations.
 
 ## Architecture
 
@@ -36,7 +36,7 @@ pip install -r requirements.txt
 python app.py
 ```
 
-API runs at `http://localhost:5000`
+API runs at `http://localhost:8000`
 
 ### 2. Frontend
 
@@ -67,7 +67,7 @@ Dashboard runs at `http://localhost:3000`
 
 | Variable | Description |
 |----------|-------------|
-| `NEXT_PUBLIC_API_URL` | Backend API URL (default: `http://localhost:5000`) |
+| `NEXT_PUBLIC_API_URL` | Backend API URL (default: `http://localhost:8000`) |
 
 ## API Endpoints
 
@@ -91,7 +91,7 @@ Legacy routes (`/login`, `/upload`, `/query`, `/results`) remain for backward co
 
 ```bash
 cd backend
-gunicorn -w 4 -b 0.0.0.0:5000 app:app
+gunicorn -w 4 -b 0.0.0.0:8000 app:app
 ```
 
 ### Frontend
@@ -112,12 +112,45 @@ export AWS_REGION=ap-southeast-2
 
 ## Design System
 
-The dashboard UI follows the [UI/UX Pro Max](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) design intelligence skill:
+Prysm uses a **sunset glassmorphism** visual language across the entire product — marketing site, auth, and dashboard:
 
-- **Style**: Data-dense analytics dashboard
-- **Colors**: Blue primary (#1E40AF) + amber accent (#D97706)
+- **Style**: Frosted-glass panels (`backdrop-blur` + translucent surfaces) over a deep violet canvas with sunset glow orbs
+- **Colors**: Violet `#a855f7` → magenta `#ec4899` → rose `#fb7185` gradient on a `#0a0612` background
 - **Typography**: Fira Sans + Fira Code
-- **Patterns**: KPI cards, drag-and-drop upload, code viewer with copy
+- **Patterns**: Glass KPI cards, gradient CTAs, glow orbs, drag-and-drop upload, code viewer with copy
+- **Utilities**: `.glass`, `.glass-panel`, `.glass-strong`, `.text-gradient`, `.bg-sunset`, `.orb` (defined in `frontend/src/app/globals.css`)
+
+## Admin account
+
+Prysm provisions an admin from environment variables on startup (no seed script):
+
+```bash
+# backend/.env
+ADMIN_USERNAME=admin
+ADMIN_EMAIL=admin@yourdomain.com
+ADMIN_PASSWORD=your-strong-password   # 8+ chars
+```
+
+Restart the backend and log in with those credentials. You can also create/update
+an admin on demand:
+
+```bash
+cd backend
+flask --app app create-admin
+```
+
+## Testing
+
+A pytest suite covers every endpoint plus the engine helpers and the DB migration.
+
+```bash
+cd backend
+pip install -r requirements.txt
+pytest -q
+```
+
+Tests run fully isolated (each uses a temporary data dir via `PRYSM_DATA_DIR`) and
+stub the AI engine, so they need no OpenAI key or network access.
 
 ## License
 

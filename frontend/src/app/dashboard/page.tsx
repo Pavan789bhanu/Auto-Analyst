@@ -65,7 +65,7 @@ export default function DashboardOverviewPage() {
             label: "Completed",
             value: stats?.completed_analyses ?? 0,
             icon: CheckCircle2,
-            color: "text-emerald-600",
+            color: "text-emerald-400",
           },
           {
             label: "Recent activity",
@@ -74,13 +74,15 @@ export default function DashboardOverviewPage() {
             color: "text-secondary",
           },
         ].map((item) => (
-          <Card key={item.label}>
+          <Card key={item.label} className="gradient-edge glass-hover overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardDescription>{item.label}</CardDescription>
-              <item.icon className={`h-4 w-4 ${item.color}`} />
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/12 bg-white/6">
+                <item.icon className={`h-4 w-4 ${item.color}`} />
+              </span>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{loading ? "—" : item.value}</div>
+              <div className="text-3xl font-bold text-white">{loading ? "—" : item.value}</div>
             </CardContent>
           </Card>
         ))}
@@ -140,7 +142,7 @@ export default function DashboardOverviewPage() {
               datasets.slice(0, 4).map((dataset) => (
                 <div
                   key={dataset.id}
-                  className="flex items-center justify-between rounded-lg border border-border px-4 py-3"
+                  className="glass-tile flex items-center justify-between rounded-xl px-4 py-3"
                 >
                   <div>
                     <p className="font-medium">{dataset.filename}</p>
@@ -184,7 +186,7 @@ export default function DashboardOverviewPage() {
             recentAnalyses.map((analysis) => (
               <div
                 key={analysis.id}
-                className="flex flex-col gap-3 rounded-lg border border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between"
+                className="glass-tile flex flex-col gap-3 rounded-xl px-4 py-4 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div className="min-w-0">
                   <div className="mb-1 flex items-center gap-2">
